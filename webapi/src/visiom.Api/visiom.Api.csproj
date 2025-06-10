@@ -13,13 +13,17 @@
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
       <Version>8.*-*</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.23" />
+    <PackageReference Include="NSwag.AspNetCore" Version="14.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include=".\..\..\client\client.esproj">
+    <ProjectReference Include=".\..\..\..\client\client.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\visiom.Core\visiom.Core.csproj" />
+    <ProjectReference Include="..\visiom.DataAccess\visiom.DataAccess.csproj" />
   </ItemGroup>
 
 </Project>
