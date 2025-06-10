@@ -5,6 +5,8 @@ import BaseLayout from "./layouts/BaseLayout";
 import HomePage from "./pages/Home";
 import { IFunctionRoute } from "./types/IFunctionRoute";
 import { RouteConfig } from "./types/RouteConfig";
+import SearchPage from "./pages/SearchPage";
+import { AnimatePresence } from "framer-motion";
 
 interface AuthContextType {
   currentUser: { id: string } | null;
@@ -14,6 +16,12 @@ export const AppRoutes: Record<string, RouteConfig> = {
   HOME: {
     path: "/",
     element: <HomePage />,
+    auth: false,
+    layout: <BaseLayout />,
+  },
+  SEARCH: {
+    path: "/search",
+    element: <SearchPage />,
     auth: false,
     layout: <BaseLayout />,
   }
@@ -49,7 +57,9 @@ export default function AppRouter(): JSX.Element {
 
   return (
     <BrowserRouter>
-      <Routes>{renderRoutes}</Routes>
+      <AnimatePresence mode="wait">
+        <Routes>{renderRoutes}</Routes>
+      </AnimatePresence>
     </BrowserRouter>
   );
 }
