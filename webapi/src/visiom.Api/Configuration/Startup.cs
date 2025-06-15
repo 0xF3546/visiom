@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
+using visiom.Core;
 
 namespace visiom.Api.Configuration
 {
@@ -43,6 +44,7 @@ namespace visiom.Api.Configuration
             services.AddControllers();
 
             services.ConfigureCoreServices();
+            services.ConfigureCore();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
