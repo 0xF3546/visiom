@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using visiom.DataAccess.Database;
-using visiom.DataAccess;
 
 namespace visiom.Api.Configuration
 {
@@ -61,13 +58,7 @@ namespace visiom.Api.Configuration
                     .Build());
             });
 
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(_configuration.GetConnectionString("AppDbContext"))
-            );
-
             services.ConfigureCoreServices();
-            services.ConfigureDataAccess();
-            services.ConfigureDatabase(_configuration);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -82,8 +73,6 @@ namespace visiom.Api.Configuration
             app.UseRouting();
             app.UseCors();
 
-            app.UseAuthentication();
-            app.UseAuthorization();
             app.UseEndpoints(endpoints => endpoints.MapControllers());
         }
     }

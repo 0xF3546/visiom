@@ -19,11 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include=".\..\..\..\client\client.esproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\visiom.Core\visiom.Core.csproj" />
-    <ProjectReference Include="..\visiom.DataAccess\visiom.DataAccess.csproj" />
   </ItemGroup>
 
 </Project>
