@@ -40,6 +40,8 @@ namespace visiom.Api.Configuration
                     .Build());
             });
 
+            services.AddControllers();
+
             services.ConfigureCoreServices();
         }
 
