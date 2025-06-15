@@ -31,24 +31,6 @@ namespace visiom.Api.Configuration
                 }
             );
 
-            services.AddAuthentication(IdentityConstants.ApplicationScheme)
-                .AddCookie(IdentityConstants.ApplicationScheme, options =>
-                {
-                    options.Events = new Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationEvents
-                    {
-                        OnRedirectToLogin = context =>
-                        {
-                            context.Response.StatusCode = 401;
-                            return Task.CompletedTask;
-                        },
-                        OnRedirectToAccessDenied = context =>
-                        {
-                            context.Response.StatusCode = 403;
-                            return Task.CompletedTask;
-                        }
-                    };
-                });
-
             services.AddCors(c =>
             {
                 c.AddDefaultPolicy(new CorsPolicyBuilder().WithOrigins(_configuration.GetSection("CorsUrls").Get<string[]>())
