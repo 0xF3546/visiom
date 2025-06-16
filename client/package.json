@@ -4,7 +4,10 @@
   "type": "module",
   "private": true,
   "dependencies": {
+    "@7nohe/openapi-react-query-codegen": "^1.6.2",
+    "@hey-api/openapi-ts": "^0.73.0",
     "@tailwindcss/vite": "^4.0.6",
+    "@tanstack/react-query": "^5.80.7",
     "axios": "^1.7.7",
     "framer-motion": "^12.16.0",
     "react": "^18.2.0",
@@ -16,7 +19,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "codegen": "openapi-rq -i ./public/api.json -o ./src/generated/api --enums typescript --useDateType --noSchemas --format prettier --lint eslint"
   },
   "eslintConfig": {
     "extends": [

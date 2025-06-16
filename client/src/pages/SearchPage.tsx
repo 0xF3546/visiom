@@ -4,6 +4,7 @@ import { SearchBar } from "../components/SearchBar";
 import { AppRoutes } from "../AppRouter";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
+import { useSearchServiceGetApiSearch } from "../generated/api/queries";
 
 const tabs = ["All", "Images", "News"];
 
@@ -12,10 +13,15 @@ export default function SearchPage() {
   const navigate = useNavigate();
   const query = params.get("q") || "";
   const [activeTab, setActiveTab] = useState("All");
-  const [results, setResults] = useState<
-    { title: string; description: string; url: string }[]
-  >([]);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const { 
+    data: result,
+    isLoading
+  } = useSearchServiceGetApiSearch({
+    q: query,
+    page: 1,
+    pageSize: 20,
+  });
 
   const handleSearch = (value: string) => {
     if (value.trim() === "") return;
@@ -23,31 +29,56 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
-    if (query) {
-      setIsLoading(true);
-      setResults([]);
-      setTimeout(() => {
-        setResults([
-          {
-            title: `${activeTab} Result 1 for "${query}"`,
-            description: "Explore the latest in Web3 and decentralized technologies.",
-            url: `https://example.com/result1?q=${encodeURIComponent(query)}`,
-          },
-          {
-            title: `${activeTab} Result 2 for "${query}"`,
-            description: "A guide to understanding blockchain and its applications.",
-            url: `https://example.com/result2?q=${encodeURIComponent(query)}`,
-          },
-          {
-            title: `${activeTab} Result 3 for "${query}"`,
-            description: "Insights into AI-driven secure search solutions.",
-            url: `https://example.com/result3?q=${encodeURIComponent(query)}`,
-          },
-        ]);
-        setIsLoading(false);
-      }, 600);
-    }
+
+
   }, [query, activeTab]);
+
+  const resultList = () => {
+    if (!result || !result.items || result.items.length === 0) {
+      return (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="text-neutral-400 text-sm sm:text-base"
+        >
+          No results found for "{query}".
+        </motion.p>
+      );
+    }
+    return (
+      
+      <motion.ul
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="space-y-4"
+            >
+              {result?.items.map((result, idx) => (
+                <li
+                  key={idx}
+                  className="bg-neutral-900/80 border border-neutral-700/50 rounded-lg p-4 sm:p-5 hover:bg-neutral-800/80 hover:border-neutral-600 transition-all duration-200 ease-in-out backdrop-blur-sm"
+                >
+                  <a
+                    href={result.url}
+                    className="text-white text-base sm:text-lg font-semibold hover:underline"
+                  >
+                    {result.title}
+                  </a>
+                  <p className="text-neutral-400 mt-1 sm:mt-2 text-sm line-clamp-2">
+                    {result.description}
+                  </p>
+                  <a
+                    href={result.url}
+                    className="text-neutral-500 text-xs sm:text-sm mt-2 block hover:text-neutral-300 transition-colors"
+                  >
+                    {result.url}
+                  </a>
+                </li>
+              ))}
+            </motion.ul>
+    )
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-black to-neutral-900 text-white font-satoshi">
@@ -108,36 +139,8 @@ export default function SearchPage() {
             >
               Loading...
             </motion.div>
-          ) : results.length > 0 ? (
-            <motion.ul
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className="space-y-4"
-            >
-              {results.map((result, idx) => (
-                <li
-                  key={idx}
-                  className="bg-neutral-900/80 border border-neutral-700/50 rounded-lg p-4 sm:p-5 hover:bg-neutral-800/80 hover:border-neutral-600 transition-all duration-200 ease-in-out backdrop-blur-sm"
-                >
-                  <a
-                    href={result.url}
-                    className="text-white text-base sm:text-lg font-semibold hover:underline"
-                  >
-                    {result.title}
-                  </a>
-                  <p className="text-neutral-400 mt-1 sm:mt-2 text-sm line-clamp-2">
-                    {result.description}
-                  </p>
-                  <a
-                    href={result.url}
-                    className="text-neutral-500 text-xs sm:text-sm mt-2 block hover:text-neutral-300 transition-colors"
-                  >
-                    {result.url}
-                  </a>
-                </li>
-              ))}
-            </motion.ul>
+          ) : (result?.items?.length ?? 0) > 0 ? (
+            resultList()
           ) : (
             <motion.p
               initial={{ opacity: 0 }}
