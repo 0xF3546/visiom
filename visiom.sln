@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "visiom.Api", "webapi\src\vi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "visiom.Core", "webapi\src\visiom.Core\visiom.Core.csproj", "{15620261-FDE9-415C-A9B0-5CD5B9F340B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "visiom.Crawler", "visiom.Crawler\visiom.Crawler.csproj", "{21140B8E-E40F-44BC-8CAF-ACDEEB083AB7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "visiom.Crawler", "webapi\src\visiom.Crawler\visiom.Crawler.csproj", "{21140B8E-E40F-44BC-8CAF-ACDEEB083AB7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

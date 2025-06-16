@@ -11,7 +11,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\visiom.Crawler\visiom.Crawler.csproj" />
+	  <ProjectReference Include="..\visiom.Crawler\visiom.Crawler.csproj" />
 	</ItemGroup>
 
 </Project>
