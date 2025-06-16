@@ -19,11 +19,11 @@ namespace visiom.Api.Search
         [HttpGet]
         [ProducesResponseType(typeof(PageResult<CrawlerResultDto>), 200)]
         public async Task<IActionResult> Search(
+            PageRequest pageable,
             [FromQuery(Name = "q")] string query,
-            [FromQuery(Name = "pageSize")] int pageSize = 10,
             [FromQuery(Name = "nextPageToken")] string nextPageToken = null)
         {
-            var result = await _crawlerService.CrawlAsync(query, pageSize, nextPageToken);
+            var result = await _crawlerService.CrawlAsync(query, pageable, nextPageToken);
             return Ok(result);
         }
     }
