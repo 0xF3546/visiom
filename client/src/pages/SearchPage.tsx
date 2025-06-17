@@ -5,33 +5,41 @@ import { AppRoutes } from "../AppRouter";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
 import { useSearchServiceGetApiSearch } from "../generated/api/queries";
+import { Pagination } from "../components/Pagination";
 
 const tabs = ["All", "Images", "News"];
 
 export default function SearchPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const query = params.get("q") || "";
+  const query = params.get("q") || '';
+  const page = parseInt(params.get("page") || "1", 10);
   const [activeTab, setActiveTab] = useState("All");
-  
+  const [searchQuery, setSearchQuery] = useState(query);
+
   const { 
     data: result,
     isLoading
   } = useSearchServiceGetApiSearch({
     q: query,
-    page: 1,
-    pageSize: 20,
+    page: page,
+    pageSize: 12,
   });
 
   const handleSearch = (value: string) => {
     if (value.trim() === "") return;
-    navigate(`/search?q=${encodeURIComponent(value)}`);
+    navigate(`/search?q=${encodeURIComponent(value)}&page=1`);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    navigate(`/search?q=${encodeURIComponent(query)}&page=${newPage}`);
   };
 
   useEffect(() => {
-
-
-  }, [query, activeTab]);
+    if (page !== 1) {
+      navigate(`/search?q=${encodeURIComponent(query)}&page=1`);
+    }
+  }, [query, activeTab, navigate]);
 
   const resultList = () => {
     if (!result || !result.items || result.items.length === 0) {
@@ -47,38 +55,40 @@ export default function SearchPage() {
       );
     }
     return (
-      
       <motion.ul
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className="space-y-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="space-y-4"
+      >
+        {result?.items.map((result, idx) => (
+          <li
+            key={idx}
+            className="bg-neutral-900/80 border border-neutral-700/50 rounded-lg p-4 sm:p-5 hover:bg-neutral-800/80 hover:border-neutral-600 transition-all duration-200 ease-in-out backdrop-blur-sm"
+          >
+            <a
+              href={result.url}
+              className="text-white text-base sm:text-lg font-semibold hover:underline"
             >
-              {result?.items.map((result, idx) => (
-                <li
-                  key={idx}
-                  className="bg-neutral-900/80 border border-neutral-700/50 rounded-lg p-4 sm:p-5 hover:bg-neutral-800/80 hover:border-neutral-600 transition-all duration-200 ease-in-out backdrop-blur-sm"
-                >
-                  <a
-                    href={result.url}
-                    className="text-white text-base sm:text-lg font-semibold hover:underline"
-                  >
-                    {result.title}
-                  </a>
-                  <p className="text-neutral-400 mt-1 sm:mt-2 text-sm line-clamp-2">
-                    {result.description}
-                  </p>
-                  <a
-                    href={result.url}
-                    className="text-neutral-500 text-xs sm:text-sm mt-2 block hover:text-neutral-300 transition-colors"
-                  >
-                    {result.url}
-                  </a>
-                </li>
-              ))}
-            </motion.ul>
-    )
-  }
+              {result.title}
+            </a>
+            <p className="text-neutral-400 mt-1 sm:mt-2 text-sm line-clamp-2">
+              {result.description}
+            </p>
+            <a
+              href={result.url}
+              className="text-neutral-500 text-xs sm:text-sm mt-2 block hover:text-neutral-300 transition-colors"
+            >
+              {result.url}
+            </a>
+          </li>
+        ))}
+      </motion.ul>
+    );
+  };
+
+  // Calculate total pages (using count as in provided code)
+  const totalPages = Math.ceil((result?.count || 0) / 12);
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-black to-neutral-900 text-white font-satoshi">
@@ -91,9 +101,9 @@ export default function SearchPage() {
         </Link>
         <div className="flex-1 max-w-2xl sm:max-w-3xl">
           <SearchBar
-            value={query}
+            value={searchQuery}
             onSearch={handleSearch}
-            onChange={(val) => navigate(`/search?q=${encodeURIComponent(val)}`)}
+            onChange={(e) => setSearchQuery(e)}
             view="compact"
             className="w-full backdrop-blur-sm transition-all duration-300 mt-2"
             autoFocus
@@ -125,7 +135,7 @@ export default function SearchPage() {
           ))}
         </nav>
 
-        <main className="max-w-4xl">
+        <main className="max-w-4xl mx-auto">
           <h1 className="text-neutral-400 text-sm sm:text-base mb-6">
             Results for <span className="text-white font-semibold">"{query}"</span> in{" "}
             <span className="text-white font-semibold">{activeTab}</span>
@@ -140,7 +150,14 @@ export default function SearchPage() {
               Loading...
             </motion.div>
           ) : (result?.items?.length ?? 0) > 0 ? (
-            resultList()
+            <>
+              {resultList()}              
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+            </>
           ) : (
             <motion.p
               initial={{ opacity: 0 }}
