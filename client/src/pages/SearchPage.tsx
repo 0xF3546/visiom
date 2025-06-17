@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import Footer from "../components/Footer";
 import { useSearchServiceGetApiSearch } from "../generated/api/queries";
 import { Pagination } from "../components/Pagination";
+import Loader from "./Loader";
 
 const tabs = ["All", "Images", "News"];
 
@@ -136,10 +137,12 @@ export default function SearchPage() {
         </nav>
 
         <main className="max-w-4xl mx-auto">
-          <h1 className="text-neutral-400 text-sm sm:text-base mb-6">
-            Results for <span className="text-white font-semibold">"{query}"</span> in{" "}
-            <span className="text-white font-semibold">{activeTab}</span>
-          </h1>
+          {!isLoading  && (
+            <h1 className="text-neutral-400 text-sm sm:text-base mb-6">
+              Results for <span className="text-white font-semibold">"{query}"</span> in{" "}
+              <span className="text-white font-semibold">{activeTab}</span>
+            </h1>
+          )}
 
           {isLoading ? (
             <motion.div
@@ -147,7 +150,7 @@ export default function SearchPage() {
               transition={{ repeat: Infinity, duration: 1.5 }}
               className="text-neutral-400 text-sm sm:text-base"
             >
-              Loading...
+              <Loader text="Searching web..." />
             </motion.div>
           ) : (result?.items?.length ?? 0) > 0 ? (
             <>
