@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { GetApiSearchData, GetApiSearchResponse } from './types.gen';
+import type { GetApiSearchData, GetApiSearchResponse, GetApiSearchImagesData, GetApiSearchImagesResponse } from './types.gen';
 
 export class SearchService {
     /**
@@ -11,7 +11,6 @@ export class SearchService {
      * @param data.page
      * @param data.pageSize
      * @param data.q
-     * @param data.nextPageToken
      * @returns PageResultOfCrawlerResultDto
      * @throws ApiError
      */
@@ -24,8 +23,29 @@ export class SearchService {
                 PageSize: data.pageSize
             },
             query: {
-                q: data.q,
-                nextPageToken: data.nextPageToken
+                q: data.q
+            }
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.page
+     * @param data.pageSize
+     * @param data.q
+     * @returns PageResultOfImageResultDto
+     * @throws ApiError
+     */
+    public static getApiSearchImages(data: GetApiSearchImagesData = {}): CancelablePromise<GetApiSearchImagesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/Search/images',
+            headers: {
+                Page: data.page,
+                PageSize: data.pageSize
+            },
+            query: {
+                q: data.q
             }
         });
     }

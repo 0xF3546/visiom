@@ -3,7 +3,6 @@
 export type PageResultOfCrawlerResultDto = {
     count?: number;
     items?: Array<CrawlerResultDto>;
-    nextPageToken?: string;
 };
 
 export type CrawlerResultDto = {
@@ -14,8 +13,22 @@ export type CrawlerResultDto = {
     snippet?: string;
 };
 
+export type PageResultOfImageResultDto = {
+    count?: number;
+    items?: Array<ImageResultDto>;
+};
+
+export type ImageResultDto = {
+    imageUrl?: string;
+    thumbnailUrl?: string;
+    title?: string;
+    sourcePageUrl?: string;
+    width?: number | null;
+    height?: number | null;
+    crawledAt?: Date;
+};
+
 export type GetApiSearchData = {
-    nextPageToken?: string;
     page?: number;
     pageSize?: number;
     q?: string;
@@ -23,12 +36,28 @@ export type GetApiSearchData = {
 
 export type GetApiSearchResponse = PageResultOfCrawlerResultDto;
 
+export type GetApiSearchImagesData = {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+};
+
+export type GetApiSearchImagesResponse = PageResultOfImageResultDto;
+
 export type $OpenApiTs = {
     '/api/Search': {
         get: {
             req: GetApiSearchData;
             res: {
                 200: PageResultOfCrawlerResultDto;
+            };
+        };
+    };
+    '/api/Search/images': {
+        get: {
+            req: GetApiSearchImagesData;
+            res: {
+                200: PageResultOfImageResultDto;
             };
         };
     };

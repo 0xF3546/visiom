@@ -44,7 +44,7 @@ namespace visiom.Api.Configuration
             services.AddControllers();
 
             services.ConfigureCoreServices();
-            services.ConfigureCore();
+            services.ConfigureCore(_configuration);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

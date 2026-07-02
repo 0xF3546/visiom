@@ -8,10 +8,11 @@ Visiom is intended to be a **decentralized, privacy-first search engine**. Priva
 decentralization are the product's reason to exist — weigh architectural decisions against that goal
 (don't centralize or leak user queries).
 
-The current implementation is an early cut and does **not** yet reflect that vision: a React/TypeScript
-SPA (`client/`) talks to a .NET 8 Web API (`webapi/`) that, on every query, performs a live centralized
-breadth-first web crawl from a hardcoded seed list. There is no database, search index,
-decentralization, or privacy layer yet.
+The current implementation is an early cut and only partially reflects that vision: a React/TypeScript
+SPA (`client/`) talks to a .NET 8 Web API (`webapi/`). A background crawler continuously indexes the
+web into a local SQLite full-text index; search queries hit **only** that index (no live per-query
+crawl, so the query never leaves the backend). Still missing from the vision: decentralization and a
+broader privacy layer. The index is bootstrapped from a small configurable seed list.
 
 Component roles: `visiom.Crawler` = web crawler, `visiom.Api` = HTTP request handling,
 `visiom.Core` = business logic, `client` = React frontend.
@@ -37,29 +38,42 @@ There are **no backend tests** despite the README referencing a `/tests` folder.
 
 ### Backend — three-project chain (`webapi/src/`)
 - **visiom.Api** — ASP.NET Core host. Uses the classic `Startup` class (`Configuration/Startup.cs`),
-  not minimal-hosting/`WebApplication`. `SearchController` is the only endpoint: `GET /api/Search`.
-  CORS origins come from the `CorsUrls` array in `appsettings.json`.
-- **visiom.Core** — service layer. `ConfigureCore()` (in `Configuration.cs`) registers services in DI;
-  `ICrawlerService`/`CrawlerService` is the seam between the API and the crawler. Also holds the
-  generic pagination helpers in `Extensions/` (`PageRequest`, `PageResult<T>`, `QueryableExtensions`).
-- **visiom.Crawler** — the actual crawler (`Crawler.cs`), depends only on AngleSharp (HTML parsing)
-  and Newtonsoft.Json. Referenced by Core, which is referenced by Api.
+  not minimal-hosting/`WebApplication`. `SearchController` exposes `GET /api/Search` (web) and
+  `GET /api/Search/images`. CORS origins come from the `CorsUrls` array in `appsettings.json`.
+- **visiom.Core** — service/orchestration layer. `ConfigureCore(IConfiguration)` (in `Configuration.cs`)
+  wires DI: binds `CrawlerOptions`, registers `ISearchIndex` (SQLite, singleton), `ICrawlerService`
+  (query path), and the `CrawlerHostedService` background crawler. Holds the SQLite index
+  (`Index/`), the crawl orchestration (`Crawling/`), and pagination helpers (`Extensions/`).
+- **visiom.Crawler** — a **pure page fetcher** (`Crawler.cs`): `FetchAsync(url)` downloads+parses one
+  page into title/content/links/images. Holds no crawl state. Depends on AngleSharp. (Newtonsoft.Json
+  is no longer used by the crawl path.)
 
-Dependency direction: `Api → Core → Crawler`. Put HTTP/DI concerns in Api, orchestration in Core,
-and pure crawling logic in Crawler.
+Dependency direction: `Api → Core → Crawler`. HTTP/DI in Api, crawl orchestration + index + query in
+Core, pure fetching in Crawler.
 
-### How search actually works (`visiom.Crawler/Crawler.cs`)
-- Every request BFS-crawls the live web starting from a **hardcoded seed list** (Wikipedia, BBC,
-  Guardian, Stack Overflow) in `GenerateSeeds()` — the query is not yet used to pick seeds ("Just for test cases").
-- Matching is naive case-insensitive substring search over URL/title/body; snippets are ±50 chars around the hit.
-- Crawl is bounded by `MaxPagesPerDomain` (2) and `MaxTotalPages` (100), and stops once `pageSize` results are collected.
-- **Pagination is cursor-based, not offset-based**: `NextPageToken` is the JSON-serialized remaining BFS
-  queue. To fetch more, the client must pass it back as `nextPageToken`. The `Page` value is essentially ignored by the crawler.
+### How search actually works (index-based)
+- **Background crawler** (`visiom.Core/Crawling/`) runs for the app's lifetime. `CrawlerHostedService`
+  orchestrates workers; the concerns are split out: `CrawlFrontier` (in-memory queue + dedup + per-domain
+  caps), `DomainThrottle` (per-host politeness delay + serialization) and `RobotsCache` (robots.txt). It
+  crawls from the bootstrap seeds (`Crawler:Seeds` in `appsettings.json`), bounded by `MaxIndexedPages`/
+  `MaxPagesPerDomain`, and writes every fetched page + its images to the index. Already-indexed pages are
+  skipped on restart, so the index persists and grows across runs.
+- **Index** (`visiom.Core/Index/`) is SQLite + FTS5, split by concern: `SqliteConnectionFactory`,
+  `SqliteSchema` (DDL), `FtsMatchQuery` (sanitizes input into a quoted-AND MATCH expression, so FTS
+  operators can't be injected), and the write/read seam `ISearchIndexWriter`/`ISearchIndexReader`
+  (`SqliteSearchIndexWriter`/`SqliteSearchIndexReader`). Pages live in `pages` with an external-content
+  FTS table `pages_fts` (kept in sync by triggers); images in `images` (FK to page). Search uses
+  `MATCH` + `bm25()` ranking and `snippet()` for descriptions. The DB file (`visiom-index.db`,
+  gitignored) sits at the API content root. The crawler depends only on the *writer*, the query path
+  only on the *reader*.
+- **Query path** (`visiom.Core/WebCrawler/impl/CrawlerService.cs`) reads the index only — no live crawl.
+- **Pagination is offset-based**: `PageResult<T>.Count` is the real total from the index, so numeric
+  paging works (`Page`/`PageSize`). There is no `nextPageToken` anymore.
 
 ### Pagination contract (important, non-obvious)
 `PageRequest` binds `Page`/`PageSize` from **HTTP headers** (`[FromHeader]`), not the query string.
-The generated client honors this — `SearchService.getApiSearch` sends `Page`/`PageSize` as headers and
-`q`/`nextPageToken` as query params. Keep this in sync if you change the endpoint signature.
+The generated client honors this — `SearchService.getApiSearch`/`getApiSearchImages` send `Page`/`PageSize`
+as headers and `q` as a query param. Keep this in sync if you change the endpoint signature.
 
 ### Frontend (`client/src/`)
 - Vite + React 18 + TypeScript + Tailwind (via `@tailwindcss/vite`) + Framer Motion animations.
@@ -68,8 +82,10 @@ The generated client honors this — `SearchService.getApiSearch` sends `Page`/`
   pages by extending `AppRoutes`, not by hand-writing `<Route>`s. Auth-gated routes (`auth: true`)
   redirect through `AuthRoutes`; auth context/provider exist (`contexts/`, `hooks/useAuthProvider`)
   but there is currently no login page.
-- Data fetching goes through TanStack Query hooks from the generated client (e.g.
-  `useSearchServiceGetApiSearch` in `pages/SearchPage.tsx`). The `queryClient`
+- Data fetching goes through TanStack Query hooks from the generated client. `pages/SearchPage.tsx`
+  has two tabs — `All` (web, `useSearchServiceGetApiSearch`) and `Images` (grid,
+  `useSearchServiceGetApiSearchImages`) — each enabled by the active tab and paged via the numeric
+  `Pagination` component (offset paging off the real `count`). The `queryClient`
   (`utils/queryClien.ts` — note the filename typo) disables refetching and sets a 5-min staleTime.
 - `main.tsx` installs an Axios request interceptor that attaches a `Bearer` token from
   `localStorage`, though search itself is unauthenticated.

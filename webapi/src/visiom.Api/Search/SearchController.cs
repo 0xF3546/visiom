@@ -20,10 +20,19 @@ namespace visiom.Api.Search
         [ProducesResponseType(typeof(PageResult<CrawlerResultDto>), 200)]
         public async Task<IActionResult> Search(
             PageRequest pageable,
-            [FromQuery(Name = "q")] string query,
-            [FromQuery(Name = "nextPageToken")] string nextPageToken = null)
+            [FromQuery(Name = "q")] string query)
         {
-            var result = await _crawlerService.CrawlAsync(query, pageable, nextPageToken);
+            var result = await _crawlerService.CrawlAsync(query, pageable);
+            return Ok(result);
+        }
+
+        [HttpGet("images")]
+        [ProducesResponseType(typeof(PageResult<ImageResultDto>), 200)]
+        public async Task<IActionResult> SearchImages(
+            PageRequest pageable,
+            [FromQuery(Name = "q")] string query)
+        {
+            var result = await _crawlerService.CrawlImagesAsync(query, pageable);
             return Ok(result);
         }
     }
